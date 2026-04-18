@@ -25,7 +25,7 @@ export async function startNewChat(title: string) {
       const mostRecentChat = chats[0];
       const messages = await getMessages(mostRecentChat.id);
       if (messages.length === 0) {
-        return mostRecentChat.id; 
+        return mostRecentChat.id;
       }
     }
 
@@ -59,7 +59,7 @@ export async function sendMessage(chatId: string, content: string) {
     let modelReply = 'Sorry, I am unable to reply at this moment. Please try again later.';
 
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://innodex.onrender.com';
+      const backendUrl = 'https://innodex.onrender.com';
       const res = await fetch(`${backendUrl}/api/chat`, {
         method: 'POST',
         headers: {
@@ -74,7 +74,7 @@ export async function sendMessage(chatId: string, content: string) {
         try {
           const errorBody = await res.json();
           if (errorBody.detail) errorDetail = errorBody.detail;
-        } catch (e) {}
+        } catch (e) { }
         throw new Error(`Backend API Error: ${errorDetail}`);
       }
 
