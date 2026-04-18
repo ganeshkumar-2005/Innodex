@@ -47,7 +47,12 @@ export default function Home() {
         return;
       }
       // Fire off message and navigate
-      await sendMessage(chatId, text);
+      const res = await sendMessage(chatId, text);
+      if (res && res.__error) {
+         alert("Detailed SendMessage Error: " + res.__error);
+         setLoading(false);
+         return;
+      }
       router.push(`/chat/${chatId}`);
     } catch (error: any) {
       alert(error.message || 'Error occurred');
