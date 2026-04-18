@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Send, Mic, MicOff } from 'lucide-react';
-import { startNewChat, sendMessage } from '@/app/actions';
+
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
@@ -40,16 +40,28 @@ export default function Home() {
     if (!text.trim() || loading) return;
     setLoading(true);
     try {
-      const chatId = await startNewChat('Startup Idea Analysis');
-      if (chatId.startsWith('ERROR:')) {
-        alert("Detailed Server Error: " + chatId);
+      const resStart = await fetch('/api/chat/start', {
+        method: 'POST',
+        body: JSON.stringify({ title: 'Startup Idea Analysis' })
+      });
+      const dataStart = await resStart.json();
+
+      if (!resStart.ok || dataStart.error) {
+        alert("Detailed Server Error: " + (dataStart.error || 'Failed to start chat'));
         setLoading(false);
         return;
       }
+      const chatId = dataStart.chatId;
+
       // Fire off message and navigate
-      const res = await sendMessage(chatId, text);
-      if (res && res.__error) {
-         alert("Detailed SendMessage Error: " + res.__error);
+      const resSend = await fetch('/api/chat/send', {
+        method: 'POST',
+        body: JSON.stringify({ chatId, content: text })
+      });
+      const dataSend = await resSend.json();
+
+      if (!resSend.ok || dataSend.error) {
+         alert("Detailed SendMessage Error: " + (dataSend.error || 'Failed to send message'));
          setLoading(false);
          return;
       }

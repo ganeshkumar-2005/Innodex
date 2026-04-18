@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff } from 'lucide-react';
-import { sendMessage } from '@/app/actions';
 import { useRouter } from 'next/navigation';
 
 interface Message {
@@ -64,9 +63,15 @@ export default function ChatArea({ chatId, initialMessages }: { chatId: string, 
     setLoading(true);
 
     try {
-      const result = await sendMessage(chatId, userText);
-      if (result && result.__error) {
-        alert(result.__error);
+      const resSend = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, content: userText })
+      });
+      const result = await resSend.json();
+
+      if (!resSend.ok || result.error) {
+        alert(result.error || 'Failed to send message');
       } else if (result && result.reply) {
         setMessages(prev => [...prev, { id: result.msgId || Date.now().toString(), role: 'model', content: result.reply }]);
         router.refresh();

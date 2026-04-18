@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Plus, MessageSquare, LogOut } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { startNewChat } from '@/app/actions';
+
 
 import { logout } from '@/app/auth-actions';
 
@@ -23,8 +23,21 @@ export default function Sidebar({ chats, user }: { chats: Chat[], user: User }) 
   const router = useRouter();
 
   const handleNewChat = async () => {
-    const id = await startNewChat('New Startup Idea');
-    router.push(`/chat/${id}`);
+    try {
+      const resStart = await fetch('/api/chat/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'New Startup Idea' })
+      });
+      const dataStart = await resStart.json();
+      if (!resStart.ok || dataStart.error) {
+        alert(dataStart.error || 'Failed to create chat');
+        return;
+      }
+      router.push(`/chat/${dataStart.chatId}`);
+    } catch (e: any) {
+      alert(e.message || 'Error occurred');
+    }
   };
 
   return (
