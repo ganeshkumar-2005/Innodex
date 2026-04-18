@@ -16,28 +16,33 @@ export async function fetchMessages(chatId: string) {
 }
 
 export async function startNewChat(title: string) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error('Unauthorized');
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('Unauthorized');
 
-  // Check if the most recent chat is empty to prevent clutter
-  const chats = await getChats(user.id);
-  if (chats.length > 0) {
-    const mostRecentChat = chats[0];
-    const messages = await getMessages(mostRecentChat.id);
-    if (messages.length === 0) {
-      return mostRecentChat.id; // Reuse the empty chat
+    const chats = await getChats(user.id);
+    if (chats.length > 0) {
+      const mostRecentChat = chats[0];
+      const messages = await getMessages(mostRecentChat.id);
+      if (messages.length === 0) {
+        return mostRecentChat.id; 
+      }
     }
-  }
 
-  const chatId = crypto.randomUUID();
-  await createChat(chatId, user.id, title);
-  revalidatePath('/chat');
-  return chatId;
+    const chatId = 'chat_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    await createChat(chatId, user.id, title);
+    revalidatePath('/chat');
+    return chatId;
+  } catch (err: any) {
+    console.error('startNewChat Error:', err);
+    return 'ERROR: ' + (err.message || String(err));
+  }
 }
 
 export async function sendMessage(chatId: string, content: string) {
   // 1. Save user message to DB
-  await addMessage(crypto.randomUUID(), chatId, 'user', content);
+  const msgId1 = 'msg_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  await addMessage(msgId1, chatId, 'user', content);
 
   // 2. Fetch context
   const previousMessages = await getMessages(chatId);
@@ -93,7 +98,8 @@ export async function sendMessage(chatId: string, content: string) {
 
 
   // 5. Save model message
-  await addMessage(crypto.randomUUID(), chatId, 'model', modelReply);
+  const msgId2 = 'msg_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  await addMessage(msgId2, chatId, 'model', modelReply);
 
   revalidatePath(`/chat/${chatId}`);
   revalidatePath('/chat');

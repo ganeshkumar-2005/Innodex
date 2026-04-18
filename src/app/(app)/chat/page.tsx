@@ -41,6 +41,11 @@ export default function Home() {
     setLoading(true);
     try {
       const chatId = await startNewChat('Startup Idea Analysis');
+      if (chatId.startsWith('ERROR:')) {
+        alert("Detailed Server Error: " + chatId);
+        setLoading(false);
+        return;
+      }
       // Fire off message and navigate
       await sendMessage(chatId, text);
       router.push(`/chat/${chatId}`);
