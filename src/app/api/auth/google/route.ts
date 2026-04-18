@@ -9,7 +9,7 @@ export async function GET() {
   // Generate Google auth URL
   const rootUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
   const options = {
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/callback/google`,
+    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'https://innodex-asfa.vercel.app'}/api/auth/callback/google`,
     client_id: GITHUB_CLIENT_ID,
     access_type: 'offline',
     response_type: 'code',

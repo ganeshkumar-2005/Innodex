@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/callback/google`;
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'https://innodex-asfa.vercel.app'}/api/auth/callback/google`;
 
   if (!clientId || !clientSecret) {
     return NextResponse.json({ error: 'Google OAuth not configured on server' }, { status: 500 });
