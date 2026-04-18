@@ -1,7 +1,7 @@
 'use server';
 
 import { deleteUserAdmin, deleteChat, updateUserRole } from '@/lib/db';
-import { getCurrentUser } from '@/app/auth-actions';
+import { getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 

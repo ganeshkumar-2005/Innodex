@@ -1,6 +1,6 @@
 import { getChats } from '@/lib/db';
 import Sidebar from '@/components/Sidebar';
-import { getCurrentUser } from '@/app/auth-actions';
+import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';

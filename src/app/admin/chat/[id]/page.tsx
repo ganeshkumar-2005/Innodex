@@ -1,5 +1,5 @@
 import { getMessages, getChats } from '@/lib/db';
-import { getCurrentUser } from '@/app/auth-actions';
+import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';

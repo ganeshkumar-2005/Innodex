@@ -3,7 +3,7 @@
 import { getChats, createChat, getMessages, addMessage, updateChatTitle } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
-import { getCurrentUser } from '@/app/auth-actions';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function fetchChats() {
   const user = await getCurrentUser();
