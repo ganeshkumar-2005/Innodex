@@ -70,7 +70,12 @@ export async function sendMessage(chatId: string, content: string) {
       });
 
       if (!res.ok) {
-        throw new Error(`Backend API Error: ${res.statusText}`);
+        let errorDetail = res.statusText;
+        try {
+          const errorBody = await res.json();
+          if (errorBody.detail) errorDetail = errorBody.detail;
+        } catch (e) {}
+        throw new Error(`Backend API Error: ${errorDetail}`);
       }
 
       const data = await res.json();
