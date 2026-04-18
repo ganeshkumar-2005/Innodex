@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff } from 'lucide-react';
 import { sendMessage } from '@/app/actions';
+import { useRouter } from 'next/navigation';
 
 interface Message {
   id: string;
@@ -17,6 +18,7 @@ export default function ChatArea({ chatId, initialMessages }: { chatId: string, 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const router = useRouter();
 
   const toggleListening = () => {
     if (isListening) {
@@ -62,12 +64,13 @@ export default function ChatArea({ chatId, initialMessages }: { chatId: string, 
     setLoading(true);
 
     try {
-      await sendMessage(chatId, userText);
-      // Data revalidation will update root layout, but since we are handling state locally we should wait for a refresh or manually fetch.
-      // Easiest is to reload the window or let Next.js Server Components refresh we can just let Next.js Server actions revalidatePath handle the refresh,
-      // but standard approach is to let the page reload the messages, or we just rely on parent component passing down messages? 
-      // If we rely on parent, we should not have local state.
-      // Let's rely on Next.js revalidatePath which will trigger a re-render of the server component and pass new initialMessages.
+      const result = await sendMessage(chatId, userText);
+      if (result && result.__error) {
+        alert(result.__error);
+      } else if (result && result.reply) {
+        setMessages(prev => [...prev, { id: result.msgId || Date.now().toString(), role: 'model', content: result.reply }]);
+        router.refresh();
+      }
     } catch (error: any) {
       alert(error.message);
     } finally {

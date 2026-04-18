@@ -31,7 +31,7 @@ export async function startNewChat(title: string) {
 
     const chatId = 'chat_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
     await createChat(chatId, user.id, title);
-    revalidatePath('/chat');
+    // revalidatePath('/chat');
     return chatId;
   } catch (err: any) {
     console.error('startNewChat Error:', err);
@@ -96,10 +96,9 @@ export async function sendMessage(chatId: string, content: string) {
     const msgId2 = 'msg_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
     await addMessage(msgId2, chatId, 'model', modelReply);
 
-    revalidatePath(`/chat/${chatId}`);
-    revalidatePath('/chat');
-
-    return { success: true };
+    // We intentionally SKIP revalidatePath here because it unpredictably crashes Vercel's Edge runtime during RSC payload generation.
+    // Instead, we return the data to the client to update the UI optimistically!
+    return { success: true, reply: modelReply, msgId: msgId2 };
   } catch (outerErr: any) {
     console.error("SEND_MESSAGE_FATAL_ERROR:", outerErr);
     return { __error: outerErr.message || String(outerErr) };
