@@ -1,7 +1,6 @@
 'use server';
 
 import { getChats, createChat, getMessages, addMessage, updateChatTitle } from '@/lib/db';
-import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser } from '@/app/auth-actions';
@@ -30,7 +29,7 @@ export async function startNewChat(title: string) {
     }
   }
 
-  const chatId = randomUUID();
+  const chatId = crypto.randomUUID();
   await createChat(chatId, user.id, title);
   revalidatePath('/chat');
   return chatId;
@@ -38,7 +37,7 @@ export async function startNewChat(title: string) {
 
 export async function sendMessage(chatId: string, content: string) {
   // 1. Save user message to DB
-  await addMessage(randomUUID(), chatId, 'user', content);
+  await addMessage(crypto.randomUUID(), chatId, 'user', content);
 
   // 2. Fetch context
   const previousMessages = await getMessages(chatId);
@@ -94,7 +93,7 @@ export async function sendMessage(chatId: string, content: string) {
 
 
   // 5. Save model message
-  await addMessage(randomUUID(), chatId, 'model', modelReply);
+  await addMessage(crypto.randomUUID(), chatId, 'model', modelReply);
 
   revalidatePath(`/chat/${chatId}`);
   revalidatePath('/chat');

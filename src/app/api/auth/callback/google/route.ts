@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserByUsername, createUser, createSession } from '@/lib/db';
-import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
@@ -58,7 +57,7 @@ export async function GET(req: NextRequest) {
     if (!user) {
       // Create user
       user = {
-        id: randomUUID(),
+        id: crypto.randomUUID(),
         username: userData.email,
         password_hash: 'GOOGLE_OAUTH_USER', // Dummy hash for OAuth users
         role: 'user', // Default down to user
@@ -68,7 +67,7 @@ export async function GET(req: NextRequest) {
     }
 
     // 4. Create local session
-    const sessionId = randomUUID();
+    const sessionId = crypto.randomUUID();
     const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
 
     await createSession({

@@ -2,7 +2,6 @@
 
 import { getUserByUsername, createUser, createSession, getSession, deleteSession, User } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { randomUUID } from 'crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -25,7 +24,7 @@ export async function register(formData: FormData) {
   const role = 'user';
 
   const user: User = {
-    id: randomUUID(),
+    id: crypto.randomUUID(),
     username,
     password_hash,
     role,
@@ -45,7 +44,7 @@ export async function login(formData: FormData) {
     return { error: 'Invalid credentials' };
   }
 
-  const sessionId = randomUUID();
+  const sessionId = crypto.randomUUID();
   const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
 
   await createSession({
