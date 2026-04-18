@@ -84,7 +84,7 @@ export async function getUserByUsername(username: string): Promise<User | undefi
     sql: 'SELECT * FROM users WHERE username = ?',
     args: [username]
   });
-  return result.rows[0] as unknown as User | undefined;
+  return result.rows[0] ? (JSON.parse(JSON.stringify(result.rows[0])) as unknown as User) : undefined;
 }
 
 export async function getUserById(id: string): Promise<User | undefined> {
@@ -92,7 +92,7 @@ export async function getUserById(id: string): Promise<User | undefined> {
     sql: 'SELECT * FROM users WHERE id = ?',
     args: [id]
   });
-  return result.rows[0] as unknown as User | undefined;
+  return result.rows[0] ? (JSON.parse(JSON.stringify(result.rows[0])) as unknown as User) : undefined;
 }
 
 export async function createUser(user: User) {
@@ -114,7 +114,7 @@ export async function getSession(id: string): Promise<Session | undefined> {
     sql: 'SELECT * FROM sessions WHERE id = ?',
     args: [id]
   });
-  return result.rows[0] as unknown as Session | undefined;
+  return result.rows[0] ? (JSON.parse(JSON.stringify(result.rows[0])) as unknown as Session) : undefined;
 }
 
 export async function deleteSession(id: string) {
@@ -129,7 +129,7 @@ export async function getChats(userId: string): Promise<Chat[]> {
     sql: 'SELECT * FROM chats WHERE user_id = ? ORDER BY created_at DESC',
     args: [userId]
   });
-  return result.rows as unknown as Chat[];
+  return JSON.parse(JSON.stringify(result.rows)) as unknown as Chat[];
 }
 
 export async function getAllChatsAdmin(): Promise<(Chat & { username: string })[]> {
@@ -139,12 +139,12 @@ export async function getAllChatsAdmin(): Promise<(Chat & { username: string })[
     LEFT JOIN users ON chats.user_id = users.id 
     ORDER BY chats.created_at DESC
   `);
-  return result.rows as unknown as (Chat & { username: string })[];
+  return JSON.parse(JSON.stringify(result.rows)) as unknown as (Chat & { username: string })[];
 }
 
 export async function getAllUsersAdmin(): Promise<User[]> {
   const result = await db.execute('SELECT * FROM users ORDER BY created_at DESC');
-  return result.rows as unknown as User[];
+  return JSON.parse(JSON.stringify(result.rows)) as unknown as User[];
 }
 
 export async function deleteUserAdmin(userId: string) {
@@ -188,7 +188,7 @@ export async function getMessages(chatId: string): Promise<Message[]> {
     sql: 'SELECT * FROM messages WHERE chat_id = ? ORDER BY created_at ASC',
     args: [chatId]
   });
-  return result.rows as unknown as Message[];
+  return JSON.parse(JSON.stringify(result.rows)) as unknown as Message[];
 }
 
 export async function addMessage(id: string, chatId: string, role: string, content: string) {
