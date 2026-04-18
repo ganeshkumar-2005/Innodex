@@ -9,70 +9,60 @@ import { redirect } from 'next/navigation';
 const SESSION_COOKIE = 'innodex_session';
 
 export async function register(formData: FormData) {
-  try {
-    const username = formData.get('username') as string;
-    const password = formData.get('password') as string;
+  const username = formData.get('username') as string;
+  const password = formData.get('password') as string;
 
-    if (!username || !password || password.length < 4) {
-      return { error: 'Invalid username or password (minimum 4 characters)' };
-    }
-
-    const existing = await getUserByUsername(username);
-    if (existing) {
-      return { error: 'Username already taken' };
-    }
-
-    const password_hash = await bcrypt.hash(password, 10);
-    const role = 'user';
-
-    const user: User = {
-      id: randomUUID(),
-      username,
-      password_hash,
-      role,
-      created_at: new Date().toISOString()
-    };
-
-    await createUser(user);
-    return { success: true };
-  } catch (err: any) {
-    console.error('Register DB Error:', err);
-    return { error: `Database Connection Error: ${err.message}` };
+  if (!username || !password || password.length < 4) {
+    return { error: 'Invalid username or password (minimum 4 characters)' };
   }
+
+  const existing = await getUserByUsername(username);
+  if (existing) {
+    return { error: 'Username already taken' };
+  }
+
+  const password_hash = await bcrypt.hash(password, 10);
+  const role = 'user';
+
+  const user: User = {
+    id: randomUUID(),
+    username,
+    password_hash,
+    role,
+    created_at: new Date().toISOString()
+  };
+
+  await createUser(user);
+  return { success: true };
 }
 
 export async function login(formData: FormData) {
-  try {
-    const username = formData.get('username') as string;
-    const password = formData.get('password') as string;
+  const username = formData.get('username') as string;
+  const password = formData.get('password') as string;
 
-    const user = await getUserByUsername(username);
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-      return { error: 'Invalid credentials' };
-    }
-
-    const sessionId = randomUUID();
-    const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
-
-    await createSession({
-      id: sessionId,
-      user_id: user.id,
-      expires_at
-    });
-
-    const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      expires: new Date(expires_at)
-    });
-
-    return { success: true };
-  } catch (err: any) {
-    console.error('Login DB Error:', err);
-    return { error: `Database Connection Error: ${err.message}` };
+  const user = await getUserByUsername(username);
+  if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    return { error: 'Invalid credentials' };
   }
+
+  const sessionId = randomUUID();
+  const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+
+  await createSession({
+    id: sessionId,
+    user_id: user.id,
+    expires_at
+  });
+
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE, sessionId, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    expires: new Date(expires_at)
+  });
+
+  return { success: true };
 }
 
 export async function logout() {

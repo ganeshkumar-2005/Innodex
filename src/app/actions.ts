@@ -1,7 +1,6 @@
 'use server';
 
 import { getChats, createChat, getMessages, addMessage, updateChatTitle } from '@/lib/db';
-import { ai, INNODEX_SYSTEM_PROMPT } from '@/lib/gemini';
 import { randomUUID } from 'crypto';
 import { revalidatePath } from 'next/cache';
 
@@ -38,10 +37,6 @@ export async function startNewChat(title: string) {
 }
 
 export async function sendMessage(chatId: string, content: string) {
-  if (!ai) {
-    throw new Error('GEMINI_API_KEY is not configured on the server.');
-  }
-
   // 1. Save user message to DB
   await addMessage(randomUUID(), chatId, 'user', content);
 
@@ -50,7 +45,7 @@ export async function sendMessage(chatId: string, content: string) {
 
   // 3. Prepare generation config
   // Using the \`systemInstruction\` parameter and mapping existing messages to the SDK format
-  
+
   const contents = previousMessages.map(msg => ({
     role: msg.role === 'model' ? 'model' : 'user',
     parts: [{ text: msg.content }]
@@ -64,11 +59,11 @@ export async function sendMessage(chatId: string, content: string) {
   if (previousMessages.length === 1) {
     generateTitle = true;
   }
-  
+
   let modelReply = 'Sorry, I am unable to reply at this moment. Please try again later.';
-  
+
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://innodex.onrender.com';
     const res = await fetch(`${backendUrl}/api/chat`, {
       method: 'POST',
       headers: {
@@ -77,11 +72,11 @@ export async function sendMessage(chatId: string, content: string) {
       body: JSON.stringify({ contents, generate_title: generateTitle }),
       cache: 'no-store'
     });
-    
+
     if (!res.ok) {
       throw new Error(`Backend API Error: ${res.statusText}`);
     }
-    
+
     const data = await res.json();
     if (data.response) {
       modelReply = data.response;
