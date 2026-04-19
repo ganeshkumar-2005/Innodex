@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 import os
+import json
+import httpx
 from dotenv import load_dotenv
 
 # Load the Next.js .env.local file from the parent directory
@@ -103,12 +105,82 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY environment variable not set on Python backend")
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
+    gemini_key = os.environ.get("GEMINI_API_KEY")
     
-    # Initialize the modern python SDK client
-    client = genai.Client(api_key=api_key)
+    # Pre-process messages
+    formatted_messages = []
+    for msg in req.contents:
+        role = "user" if msg.role == "user" else "assistant" # assistant for OpenRouter, model for Gemini
+        formatted_messages.append({"role": role, "content": msg.parts[0].text})
+
+    if openrouter_key:
+        try:
+            async with httpx.AsyncClient() as client:
+                headers = {
+                    "Authorization": f"Bearer {openrouter_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                # Main Chat Request
+                chat_payload = {
+                    "model": "google/gemini-2.0-flash-001", # High performance OpenRouter model
+                    "messages": [
+                        {"role": "system", "content": INNODEX_SYSTEM_PROMPT},
+                        *formatted_messages
+                    ],
+                    "temperature": 0.7
+                }
+                
+                response = await client.post(
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=chat_payload,
+                    timeout=60.0
+                )
+                
+                if response.status_code != 200:
+                    raise Exception(f"OpenRouter Error: {response.text}")
+                
+                data = response.json()
+                reply_text = data["choices"][0]["message"]["content"]
+                result = {"response": reply_text}
+                
+                # Title Generation
+                if req.generate_title and len(req.contents) > 0:
+                    first_user_msg = req.contents[0].parts[0].text
+                    title_payload = {
+                        "model": "google/gemini-2.0-flash-001",
+                        "messages": [
+                            {"role": "system", "content": "You are a title generator. Generate a concise, catchy, 2-to-4 word title for this startup idea. Output NOTHING but the title without quotes."},
+                            {"role": "user", "content": first_user_msg}
+                        ],
+                        "temperature": 0.3
+                    }
+                    t_res = await client.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        headers=headers,
+                        json=title_payload,
+                        timeout=30.0
+                    )
+                    if t_res.status_code == 200:
+                        t_data = t_res.json()
+                        result["title"] = t_data["choices"][0]["message"]["content"].strip().strip('"').strip("'")
+                
+                return result
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            if not gemini_key:
+                raise HTTPException(status_code=500, detail=f"OpenRouter Error: {str(e)}")
+            # Fallback to Gemini if OpenRouter fails and Gemini key exists
+            print("OpenRouter failed, falling back to Gemini...")
+
+    # Gemini Fallback (Existing Logic)
+    if not gemini_key:
+        raise HTTPException(status_code=500, detail="No API Key found (GEMINI_API_KEY or OPENROUTER_API_KEY)")
+    
+    client = genai.Client(api_key=gemini_key)
     
     formatted_contents = []
     for msg in req.contents:
@@ -121,8 +193,11 @@ async def chat(req: ChatRequest):
         )
     
     try:
+        # Using a more robust model name for Gemini SDK
+        model_name = 'gemini-1.5-flash-latest' # Try -latest suffix
+        
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model=model_name,
             contents=formatted_contents,
             config=types.GenerateContentConfig(
                 temperature=0.7,
@@ -139,7 +214,7 @@ async def chat(req: ChatRequest):
                 system_instruction="You are a title generator. Generate a concise, catchy, 2-to-4 word title for this startup idea. Output NOTHING but the title without quotes."
             )
             title_response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model=model_name,
                 contents=[first_user_msg],
                 config=title_config
             )
@@ -147,4 +222,6 @@ async def chat(req: ChatRequest):
             
         return result
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
