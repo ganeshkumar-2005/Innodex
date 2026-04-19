@@ -5,7 +5,7 @@ import { Plus, MessageSquare, LogOut } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 
 
-import { logout } from '@/app/auth-actions';
+// No longer importing logout server action
 
 interface Chat {
   id: string;
@@ -79,7 +79,11 @@ export default function Sidebar({ chats, user, onClose }: { chats: Chat[], user:
         )}
         
         <button 
-          onClick={() => logout()} 
+          onClick={async () => {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            router.push('/login');
+            router.refresh();
+          }} 
           style={{ 
             display: 'flex', 
             alignItems: 'center', 

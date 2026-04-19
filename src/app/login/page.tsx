@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { login } from '@/app/auth-actions';
+// No longer importing login server action
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -12,12 +12,18 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const result = await login(formData);
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.fromEntries(formData))
+    });
+    const result = await res.json();
     
     if (result.error) {
       setError(result.error);
     } else {
       router.push('/chat');
+      router.refresh();
     }
   }
 
