@@ -18,7 +18,7 @@ interface User {
   role: 'user' | 'admin';
 }
 
-export default function Sidebar({ chats, user }: { chats: Chat[], user: User }) {
+export default function Sidebar({ chats, user, onClose }: { chats: Chat[], user: User, onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -43,7 +43,7 @@ export default function Sidebar({ chats, user }: { chats: Chat[], user: User }) 
   return (
     <div className="sidebar">
       <div className="sidebar-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Link href="/chat" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#fff' }}>
+        <Link href="/chat" onClick={() => onClose?.()} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: '#fff' }}>
           <img src="/logo.png" alt="Innodex" style={{ height: '32px', borderRadius: '4px' }} />
           <h2 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Innodex</h2>
         </Link>
@@ -59,6 +59,7 @@ export default function Sidebar({ chats, user }: { chats: Chat[], user: User }) 
             key={chat.id} 
             href={`/chat/${chat.id}`}
             className={`chat-item ${pathname.includes(chat.id) ? 'active' : ''}`}
+            onClick={() => onClose?.()}
           >
             <MessageSquare size={16} />
             {chat.title}

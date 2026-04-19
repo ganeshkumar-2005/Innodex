@@ -1,5 +1,5 @@
 import { getChats } from '@/lib/db';
-import Sidebar from '@/components/Sidebar';
+import SidebarWrapper from '@/components/SidebarWrapper';
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
@@ -18,9 +18,8 @@ export default async function AppLayout({
   const chats = await getChats(user.id);
 
   return (
-    <div className="app-container">
-      <Sidebar chats={chats} user={user} />
+    <SidebarWrapper chats={chats} user={user}>
       {children}
-    </div>
+    </SidebarWrapper>
   );
 }
