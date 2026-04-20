@@ -24,7 +24,9 @@ export async function POST(req: Request) {
 
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://innodex.onrender.com';
-      const res = await fetch(`${backendUrl}/api/chat`, {
+      
+      // Use streaming endpoint for faster perceived response
+      const res = await fetch(`${backendUrl}/api/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -42,12 +44,51 @@ export async function POST(req: Request) {
         throw new Error(`Backend API Error: ${errorDetail}`);
       }
 
-      const data = await res.json();
-      if (data.response) {
-        modelReply = data.response;
+      // Parse SSE stream to collect full response
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+      let title: string | null = null;
+
+      if (reader) {
+        let buffer = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // keep incomplete line in buffer
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.token) {
+                  fullResponse += data.token;
+                }
+                if (data.done) {
+                  if (data.full_response) fullResponse = data.full_response;
+                  if (data.title) title = data.title;
+                }
+                if (data.error) {
+                  throw new Error(data.error);
+                }
+              } catch (parseErr: any) {
+                if (parseErr.message && !parseErr.message.includes('JSON')) {
+                  throw parseErr;
+                }
+              }
+            }
+          }
+        }
       }
-      if (data.title) {
-        await updateChatTitle(chatId, data.title);
+
+      if (fullResponse) {
+        modelReply = fullResponse;
+      }
+      if (title) {
+        await updateChatTitle(chatId, title);
       }
     } catch (err: any) {
       if (err.message && (err.message.includes('fetch failed') || err.message.includes('ECONNREFUSED'))) {
